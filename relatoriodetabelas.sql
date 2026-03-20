@@ -1,0 +1,68 @@
+-- Gerando Relatório de Vendas Válidas
+
+select * from notas_fiscais;
+select * from itens_notas_fiscais;
+
+#Junção das Duas Tabelas
+SELECT NF.CPF, NF.DATA_VENDA, INF.QUANTIDADE
+FROM notas_fiscais AS NF 
+INNER JOIN itens_notas_fiscais AS INF
+ON NF.NUMERO = INF.NUMERO;
+
+#Modificando a data
+SELECT 
+NF.CPF, 
+DATE_FORMAT(NF.DATA_VENDA,'%Y-%m')AS ANO_MES,
+INF.QUANTIDADE
+FROM notas_fiscais AS NF 
+INNER JOIN itens_notas_fiscais AS INF
+ON NF.NUMERO = INF.NUMERO;
+
+#Somando os valores da coluna Quantidade
+SELECT NF.CPF, 
+DATE_FORMAT(NF.DATA_VENDA,'%Y-%m')AS ANO_MES,
+SUM(INF.QUANTIDADE) AS QNTD_VENDA
+FROM notas_fiscais AS NF 
+INNER JOIN itens_notas_fiscais AS INF
+ON NF.NUMERO = INF.NUMERO
+GROUP BY NF.CPF, ANO_MES;
+
+#Obter o volume total de compra por cliente
+SELECT TC.CPF, TC.NOME,
+TC.VOLUME_DE_COMPRA AS QNTD_LIMITE
+FROM tabela_de_clientes AS TC;
+
+#Juntando as 3 tabelas
+SELECT NF.CPF,TC.NOME, 
+DATE_FORMAT(NF.DATA_VENDA,'%Y-%m')AS ANO_MES,
+SUM(INF.QUANTIDADE) AS QNTD_VENDA,
+TC.VOLUME_DE_COMPRA AS VOLUME_LIMITE
+FROM notas_fiscais AS NF 
+INNER JOIN itens_notas_fiscais AS INF
+ON NF.NUMERO = INF.NUMERO
+INNER JOIN tabela_de_clientes AS TC
+ON TC.CPF = NF.CPF
+GROUP BY NF.CPF, TC.NOME, ANO_MES;
+
+#Usando Subquery
+SELECT X.CPF, X.NOME, X.ANO_MES, X.QNTD_VENDA, X.VOLUME_LIMITE,
+X.VOLUME_LIMITE - X.QNTD_VENDA AS DIFERENCA,
+CASE
+   WHEN ( X.VOLUME_LIMITE - X.QNTD_VENDA) < 0
+   THEN "Venda Inválida"
+   ELSE "Venda Válida"
+END AS STATUS_VENDA
+FROM (
+SELECT NF.CPF,TC.NOME, 
+DATE_FORMAT(NF.DATA_VENDA,'%Y-%m')AS ANO_MES,
+SUM(INF.QUANTIDADE) AS QNTD_VENDA,
+TC.VOLUME_DE_COMPRA AS VOLUME_LIMITE
+FROM notas_fiscais AS NF 
+INNER JOIN itens_notas_fiscais AS INF
+ON NF.NUMERO = INF.NUMERO
+INNER JOIN tabela_de_clientes AS TC
+ON TC.CPF = NF.CPF
+GROUP BY NF.CPF, TC.NOME, ANO_MES) AS X;
+
+
+
